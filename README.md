@@ -67,13 +67,6 @@ This project demonstrates modern Android development practices using **Kotlin** 
     * `MorningWorker`: Checks weather and engagement.
     * `NoonWorker`: Checks watering schedules.
 
----
-
-## 📸 Screenshots
-
-| Home Screen | Add Plant | AI Chat | Settings |
-| :---: | :---: | :---: | :---: |
-| *(Place Screenshot)* | *(Place Screenshot)* | *(Place Screenshot)* | *(Place Screenshot)* |
 
 ---
 
