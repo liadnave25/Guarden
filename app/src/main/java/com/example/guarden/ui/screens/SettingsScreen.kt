@@ -41,7 +41,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.airbnb.lottie.compose.*
 import com.example.guarden.R
-import com.example.guarden.ui.components.AdBanner
 import com.example.guarden.ui.theme.*
 import com.example.guarden.viewmodel.SettingsViewModel
 
@@ -154,11 +153,6 @@ fun SettingsScreen(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = GreenBackground)
             )
         },
-        bottomBar = {
-            if (prefs?.isPremium == false) {
-                AdBanner()
-            }
-        }
     ) { paddingValues ->
 
         if (prefs == null) return@Scaffold

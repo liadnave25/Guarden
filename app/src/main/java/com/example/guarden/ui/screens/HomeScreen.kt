@@ -15,7 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -64,7 +64,6 @@ fun HomeScreen(
 
     val context = LocalContext.current
 
-    // --- 1. הוספנו משתנה סטייט לניהול הפתיחה של הבועה ---
     var isChatOpen by remember { mutableStateOf(false) }
 
     var plantToDelete by remember { mutableStateOf<Plant?>(null) }
@@ -97,7 +96,6 @@ fun HomeScreen(
         )
     }
 
-    // --- Location Permission ---
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -108,7 +106,6 @@ fun HomeScreen(
         }
     }
 
-    // --- Sorting Logic ---
     val sortedPlants = plants.sortedBy { plant ->
         val timeDiff = System.currentTimeMillis() - plant.lastWateringDate
         val daysPassed = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(timeDiff).toInt()
@@ -124,8 +121,6 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = GreenBackground,
-
-        // --- TOP BAR ---
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -175,7 +170,6 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    // --- Settings Animation Logic ---
                     var isPlaying by remember { mutableStateOf(false) }
 
                     LaunchedEffect(Unit) {
@@ -217,12 +211,7 @@ fun HomeScreen(
                 )
             )
         },
-
-        bottomBar = {
-            if (!isPremium) {
-                AdBanner()
-            }
-        }
+        bottomBar = { }
     ) { paddingValues ->
 
         Box(
@@ -230,7 +219,6 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // --- LIST OR EMPTY STATE ---
             if (plants.isEmpty()) {
                 EmptyState()
             } else {
@@ -238,25 +226,36 @@ fun HomeScreen(
                     contentPadding = PaddingValues(bottom = 120.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(sortedPlants) { plant ->
-                        PlantItemCard(
-                            plant = plant,
-                            onDeleteClick = {
-                                plantToDelete = plant
-                            },
-                            onWaterClick = {
-                                viewModel.waterPlant(plant)
-                                Toast.makeText(context, "Watered ${plant.name}! 🌱", Toast.LENGTH_SHORT).show()
+
+                    itemsIndexed(sortedPlants) { index, plant ->
+                        Column {
+                            PlantItemCard(
+                                plant = plant,
+                                onDeleteClick = {
+                                    plantToDelete = plant
+                                },
+                                onWaterClick = {
+                                    viewModel.waterPlant(plant)
+                                    Toast.makeText(context, "Watered ${plant.name}! 🌱", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+
+                            if (!isPremium && (index + 1) % 3 == 0) {
+                                NativeAdComponent()
                             }
-                        )
+                        }
+                    }
+
+                    if (!isPremium && sortedPlants.size < 3) {
+                        item {
+                            NativeAdComponent()
+                        }
                     }
                 }
             }
 
-            // --- BOTTOM BUTTONS AREA ---
             val buttonBottomPadding = 24.dp
 
-            // 1. AI Agent Button (Bottom Left)
             val matchLottieGradient = Brush.linearGradient(
                 colors = listOf(
                     Color(0xFF63D066),
@@ -276,7 +275,6 @@ fun HomeScreen(
                     )
                     .clickable {
                         if (isPremium) {
-                            // --- 2. תיקון: במקום לנווט, אנחנו משנים את הסטייט ---
                             isChatOpen = true
                         } else {
                             Toast.makeText(context, "Agent is locked! Upgrade to Premium.", Toast.LENGTH_SHORT).show()
@@ -310,7 +308,6 @@ fun HomeScreen(
                 }
             }
 
-            // 2. Add Plant Button (Bottom Center)
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -334,16 +331,14 @@ fun HomeScreen(
                 )
             }
 
-            // --- 3. הוספת הבועה עצמה מעל הכל ---
             AnimatedVisibility(
                 visible = isChatOpen,
                 enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut(),
                 modifier = Modifier
                     .fillMaxSize()
-                    .zIndex(2f) // שים לב ל-Z Index הגבוה
+                    .zIndex(2f)
             ) {
-                // רקע כהה חצי שקוף
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -352,16 +347,15 @@ fun HomeScreen(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
-                            isChatOpen = false // לחיצה בחוץ סוגרת
+                            isChatOpen = false
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    // הכרטיס הלבן (הבועה)
                     Card(
                         modifier = Modifier
                             .fillMaxWidth(0.9f)
                             .fillMaxHeight(0.85f)
-                            .clickable(enabled = false) {}, // לחיצה בפנים לא סוגרת
+                            .clickable(enabled = false) {},
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)

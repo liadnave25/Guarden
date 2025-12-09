@@ -46,7 +46,6 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.guarden.ui.components.AdBanner
 import com.example.guarden.ui.theme.*
 import com.example.guarden.viewmodel.PlantViewModel
 import java.io.File
@@ -58,7 +57,8 @@ import java.util.Locale
 @Composable
 fun AddPlantScreen(
     navController: NavController,
-    viewModel: PlantViewModel = hiltViewModel()
+    viewModel: PlantViewModel = hiltViewModel(),
+    onSaveClick: () -> Unit // פרמטר חדש לטיפול בפרסומת המעבר
 ) {
     val context = LocalContext.current
 
@@ -119,7 +119,9 @@ fun AddPlantScreen(
                 waterFreq = waterFreqFloat.toInt(),
                 imageUri = selectedImageUri?.toString()
             )
-            navController.popBackStack()
+            // שינוי קריטי: במקום לנווט מכאן, אנחנו קוראים ל-Callback
+            // ה-MainActivity יציג את הפרסומת ואז ינווט אחורה
+            onSaveClick()
         }
     }
 
@@ -181,7 +183,8 @@ fun AddPlantScreen(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = GreenBackground)
             )
         },
-        bottomBar = { AdBanner() }
+        // מחקנו את ה-AdBanner מכאן
+        bottomBar = { }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -200,7 +203,6 @@ fun AddPlantScreen(
                     .background(Color.White)
                     .dashedBorder(2.dp, GreenPrimary, 24.dp)
                     .clickable {
-                        // במקום לפתוח גלריה ישר, נפתח את התפריט
                         showImageSourceOption = true
                     },
                 contentAlignment = Alignment.Center
@@ -227,8 +229,6 @@ fun AddPlantScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-
-            // ... שאר השדות נשארים ללא שינוי ...
 
             // 2. שם הצמח
             OutlinedTextField(
@@ -375,7 +375,7 @@ fun Context.createImageFile(): Uri {
     )
     return FileProvider.getUriForFile(
         this,
-        "${packageName}.fileprovider", // וודא שזה תואם למה שכתבת ב-Manifest
+        "${packageName}.fileprovider",
         image
     )
 }

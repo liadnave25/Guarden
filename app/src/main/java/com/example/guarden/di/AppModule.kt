@@ -65,9 +65,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideWeatherApi(): WeatherApi {
-        // המפתח החינמי של OpenWeatherMap
-        // אם עדיין אין לך מפתח, זה יעבוד אבל תחזור שגיאה בבקשת מזג האוויר
-        // כדאי להחליף את "YOUR_OPENWEATHER_API_KEY" במפתח האמיתי שלך
 
         val baseUrl = "https://api.openweathermap.org/"
 

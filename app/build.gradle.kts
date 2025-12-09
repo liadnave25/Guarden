@@ -99,4 +99,7 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
     implementation("com.airbnb.android:lottie-compose:6.4.0")
+
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
+    implementation("androidx.lifecycle:lifecycle-process:2.6.2")
 }

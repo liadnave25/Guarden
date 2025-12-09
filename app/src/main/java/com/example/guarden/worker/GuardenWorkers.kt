@@ -44,7 +44,7 @@ class MorningWorker @AssistedInject constructor(
         // 2. בדיקת מזג אוויר סוער
         if (prefs.lastLat != 0.0) {
             try {
-                val apiKey = "8f41145be634cd02bf2dad93f45a1acb" // שים כאן את המפתח האמיתי!
+                val apiKey = "" // שים כאן את המפתח האמיתי!
                 val weather = weatherApi.getCurrentWeather(prefs.lastLat, prefs.lastLon, apiKey = apiKey)
 
                 val temp = weather.main.temp
