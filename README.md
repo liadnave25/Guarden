@@ -18,6 +18,35 @@ Guarden solves the common problem of forgetting to water plants or not knowing h
 
 ---
 
+## ⭐ Smart Rating & Sharing (UX + Monetization Upgrade)
+
+Guarden recently upgraded the user experience and monetization layer by implementing **time-based + behavior-based** rating and sharing systems that are **controlled, non-intrusive, and context-aware**.
+
+### ✅ Intelligent In-App Rating Flow (RatingManager)
+
+A dedicated `RatingManager` controls when rating prompts can appear, ensuring users are asked only after meaningful engagement:
+
+- **48 hours after install** before the first rating request can appear.
+- **72-hour cooldown window** between rating prompts (from the last request time).
+- All timing and status flags are persisted via **DataStore** to keep behavior consistent across sessions.
+
+#### 🎯 Dual Feedback Path
+Guarden includes a “double feedback route” based on the user’s rating:
+
+- **High rating (⭐ 4–5):** Shows a **thank-you** message to reinforce positive sentiment.
+- **Low rating (⭐ 1–3):** Opens a **feedback request** (to learn what to improve) and **triggers an Interstitial Ad** in parallel to maximize monetization without impacting highly satisfied users.
+
+### 🔗 Context-Aware Share App System
+
+A smart sharing mechanism encourages organic growth, but adapts to the user’s plan and the moment of value:
+
+- **Free plan users:** can see a share suggestion **once every 3 days** (cooldown-based).
+- **Premium users:** get the share suggestion at a **high-value moment** — **immediately after finishing an interaction with the AI Agent**.
+
+All share cooldown data and last-trigger timestamps are stored in **DataStore**, providing a personalized and consistent UX.
+
+---
+
 ## 💎 Freemium Business Model
 
 Guarden utilizes a hybrid monetization strategy balancing user experience with revenue generation.
@@ -50,7 +79,7 @@ This project demonstrates modern Android development practices using **Kotlin** 
 
 ### 💾 Data & Networking
 * **Room Database:** Local persistence for plant data.
-* **DataStore (Preferences):** Storing user settings (Premium status, limits, notifications).
+* **DataStore (Preferences):** Storing user settings (Premium status, limits, notifications, rating/share cooldown timestamps).
 * **Retrofit & Gson:** Networking client for Weather API calls.
 * **Coroutines & Flow:** Asynchronous programming and reactive state management.
 
@@ -60,13 +89,13 @@ This project demonstrates modern Android development practices using **Kotlin** 
     * *App Open Ads*
     * *Native Advanced Ads* (Custom Compose Implementation)
     * *Rewarded Video Ads*
+    * *Interstitial Ads* (Triggered conditionally for low-rating flows)
 * **OpenWeatherMap API:** Real-time weather data fetching.
 
 ### ⚙️ Background Processing
 * **WorkManager:** Robust scheduling for background tasks:
     * `MorningWorker`: Checks weather and engagement.
     * `NoonWorker`: Checks watering schedules.
-
 
 ---
 
@@ -85,5 +114,5 @@ To run this project locally, you will need to set up a few API keys:
 
 ## 👨‍💻 Created By
 
-**Liad Nave**
+**Liad Nave**  
 *Product Development Project - Afeka College*
