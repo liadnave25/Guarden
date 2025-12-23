@@ -17,8 +17,8 @@ import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
+import com.example.guarden.data.RatingManager
 
-// יצירת ה-DataStore (שמרתי על השם "settings" שהגדרת)
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 @Module
@@ -33,9 +33,9 @@ object AppModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "guarden_database" // שמרתי על השם המקורי שלך
+            "guarden_database"
         )
-            .fallbackToDestructiveMigration() // שמרתי את ההגדרות שלך
+            .fallbackToDestructiveMigration()
             .build()
     }
 
@@ -53,7 +53,6 @@ object AppModule {
         return context.dataStore
     }
 
-    // הוספנו את זה: ספק לרפוזיטורי של ההעדפות (כדי שנוכל להזריק אותו ל-ViewModel)
     @Provides
     @Singleton
     fun provideUserPreferencesRepository(dataStore: DataStore<Preferences>): UserPreferencesRepository {
@@ -73,5 +72,10 @@ object AppModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(WeatherApi::class.java)
+    }
+    @Provides
+    @Singleton
+    fun provideRatingManager(userPreferencesRepository: UserPreferencesRepository): RatingManager {
+        return RatingManager(userPreferencesRepository)
     }
 }

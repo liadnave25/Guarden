@@ -44,7 +44,7 @@ class GuardenApplication : Application(), Configuration.Provider {
 
         // 3. טעינה ראשונית
         adMobManager.loadAppOpenAd(this)
-        adMobManager.loadRewarded(this)
+        adMobManager.loadInterstitial(this)
 
         setupRecurringWork()
     }

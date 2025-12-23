@@ -19,12 +19,11 @@ import androidx.navigation.compose.rememberNavController
 import com.example.guarden.ui.navigation.Screen
 import com.example.guarden.ui.screens.HomeScreen
 import com.example.guarden.ui.screens.AddPlantScreen
-import com.example.guarden.ui.screens.ChatScreen
 import com.example.guarden.ui.screens.SettingsScreen
 import com.example.guarden.ui.theme.GuardenTheme
+import com.example.guarden.ads.AdMobManager
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
-import com.example.guarden.ads.AdMobManager
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -62,7 +61,9 @@ fun GuardenApp(adMobManager: AdMobManager) {
     val context = LocalContext.current
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
-        composable(Screen.Home.route) { HomeScreen(navController = navController) }
+        composable(Screen.Home.route) {
+            HomeScreen(navController = navController,adMobManager = adMobManager) // קריאה פשוטה עכשיו
+        }
         composable(Screen.Settings.route) { SettingsScreen(navController = navController) }
         composable(Screen.AddPlant.route) {
             AddPlantScreen(
@@ -70,7 +71,7 @@ fun GuardenApp(adMobManager: AdMobManager) {
                 onSaveClick = {
                     val activity = context as? Activity
                     if (activity != null) {
-                        adMobManager.showRewarded(activity) {
+                        adMobManager.showInterstitial(activity) {
                             navController.popBackStack()
                         }
                     } else {

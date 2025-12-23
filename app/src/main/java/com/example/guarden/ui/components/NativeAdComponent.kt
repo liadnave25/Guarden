@@ -176,7 +176,6 @@ fun NativeAdComponent() {
                             iconView.setImageDrawable(nativeAd.icon?.drawable)
                             iconView.visibility = android.view.View.VISIBLE
                         } else {
-                            // אם אין אייקון, נעלים את הריבוע האפור
                             iconView.visibility = android.view.View.GONE
                         }
 
