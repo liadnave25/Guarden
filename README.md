@@ -13,6 +13,7 @@ Guarden solves the common problem of forgetting to water plants or not knowing h
 * **🌱 Smart Plant Tracking:** Add plants with custom photos (Camera/Gallery), types, and specific watering schedules.
 * **🧠 AI Garden Consultant:** Integrated **Gemini AI** chatbot that knows your specific garden context. Ask for advice, and it answers based on the plants you actually own.
 * **⛈️ Weather-Aware Alerts:** Fetches real-time weather data (OpenWeatherMap) based on your location. Sends notifications during extreme heat or storms to protect your garden.
+* **📊 Professional Monitoring:** Real-time crash reporting and user behavior tracking via **Firebase**, ensuring a stable and data-driven product evolution.
 * **💧 Smart Reminders:** Background workers monitor your plants and notify you when it's time to water or if you haven't visited the app in a while.
 * **🎨 Dynamic UI:** Smooth animations using **Lottie**, adaptive layouts, and a clean Material3 design system.
 
@@ -62,6 +63,23 @@ Guarden utilizes a hybrid monetization strategy balancing user experience with r
 
 ---
 
+## 📊 Analytics & Monitoring (Firebase Integration)
+
+Guarden is not just a standalone app but a managed product. We integrated **Firebase** to monitor stability and analyze user behavior in real-time.
+
+### 📈 Firebase Analytics (Custom Events)
+We track key KPIs to understand user engagement and the sales funnel using `logEvent` via Dependency Injection:
+* **`plant_added`**: Tracks when a user saves a plant, including parameters like `plant_type` and `water_frequency`.
+* **`chat_opened`**: Monitors engagement with the AI premium feature.
+* **`purchased_premium`**: Tracks conversion rates for the subscription model.
+* **`purchased_plant_pack`**: Tracks revenue from one-time in-app purchases.
+
+### 🛡️ Firebase Crashlytics
+* **Real-time Stability:** Automatic reporting of fatal crashes and non-fatal errors.
+* **Fatal Exception Handling:** The app captures stack traces (e.g., `RuntimeException`) to pinpoint bugs in specific ViewModels or Screens immediately.
+
+---
+
 ## 🛠️ Tech Stack & Capabilities
 
 This project demonstrates modern Android development practices using **Kotlin** and **MVVM Architecture**.
@@ -74,7 +92,7 @@ This project demonstrates modern Android development practices using **Kotlin** 
 
 ### 🏗️ Architecture & Injection
 * **MVVM:** Clean separation of concerns (Model-View-ViewModel).
-* **Hilt (Dagger):** Dependency Injection for ViewModels, Database, and API services.
+* **Hilt (Dagger):** Dependency Injection for ViewModels, Database, Analytics, and API services.
 * **Navigation Compose:** Single-activity navigation architecture.
 
 ### 💾 Data & Networking
@@ -85,17 +103,16 @@ This project demonstrates modern Android development practices using **Kotlin** 
 
 ### ☁️ Cloud & Services
 * **Google Generative AI SDK:** Integration with **Gemini Flash** model for the chat assistant.
-* **Google Mobile Ads SDK (AdMob):** Implementation of:
-    * *App Open Ads*
-    * *Native Advanced Ads* (Custom Compose Implementation)
-    * *Rewarded Video Ads*
-    * *Interstitial Ads* (Triggered conditionally for low-rating flows)
+* **Firebase Suite:**
+    * **Analytics:** For behavioral tracking.
+    * **Crashlytics:** For stability monitoring.
+* **Google Mobile Ads SDK (AdMob):** Implementation of App Open, Native, Rewarded, and Interstitial ads.
 * **OpenWeatherMap API:** Real-time weather data fetching.
 
 ### ⚙️ Background Processing
 * **WorkManager:** Robust scheduling for background tasks:
-    * `MorningWorker`: Checks weather and engagement.
-    * `NoonWorker`: Checks watering schedules.
+    * `MorningWorker`: Checks weather and engagement.
+    * `NoonWorker`: Checks watering schedules.
 
 ---
 
@@ -103,16 +120,17 @@ This project demonstrates modern Android development practices using **Kotlin** 
 
 To run this project locally, you will need to set up a few API keys:
 
-1.  **Clone the repository.**
-2.  **Open in Android Studio.**
-3.  **Configure API Keys:**
-    * Open `WeatherApi.kt` / `PlantViewModel.kt` and insert your **OpenWeatherMap Key**.
-    * Open `ChatViewModel.kt` and insert your **Gemini AI API Key**.
-4.  **Sync Gradle** and Run on an Emulator/Device.
+1.  **Clone the repository.**
+2.  **Open in Android Studio.**
+3.  **Configure API Keys:**
+    * Open `WeatherApi.kt` / `PlantViewModel.kt` and insert your **OpenWeatherMap Key**.
+    * Open `ChatViewModel.kt` and insert your **Gemini AI API Key**.
+    * Ensure `google-services.json` is present in the `app/` folder (for Firebase).
+4.  **Sync Gradle** and Run on an Emulator/Device.
 
 ---
 
 ## 👨‍💻 Created By
 
-**Liad Nave**  
+**Liad Nave**  
 *Product Development Project - Afeka College*
