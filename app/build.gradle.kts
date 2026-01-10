@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -102,4 +104,9 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-ads:23.0.0")
     implementation("androidx.lifecycle:lifecycle-process:2.6.2")
+
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics")
 }

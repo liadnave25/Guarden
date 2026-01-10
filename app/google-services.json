@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "522042547572",
+    "project_id": "guarden-56a4d",
+    "storage_bucket": "guarden-56a4d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522042547572:android:e21562fd23d9fafce02021",
+        "android_client_info": {
+          "package_name": "com.example.guarden"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnzvNgxyDJhiebxJhfiuIs3B87-3iiZaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

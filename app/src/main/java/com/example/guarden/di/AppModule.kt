@@ -18,6 +18,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 import com.example.guarden.data.RatingManager
+import com.google.firebase.analytics.FirebaseAnalytics
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -59,7 +60,6 @@ object AppModule {
         return UserPreferencesRepository(dataStore)
     }
 
-    // --- Weather Provider (החלק החדש של שלב 7) ---
 
     @Provides
     @Singleton
@@ -73,9 +73,16 @@ object AppModule {
             .build()
             .create(WeatherApi::class.java)
     }
+
     @Provides
     @Singleton
     fun provideRatingManager(userPreferencesRepository: UserPreferencesRepository): RatingManager {
         return RatingManager(userPreferencesRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAnalytics(@ApplicationContext context: Context): FirebaseAnalytics {
+        return FirebaseAnalytics.getInstance(context)
     }
 }

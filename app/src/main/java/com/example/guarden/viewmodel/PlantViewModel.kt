@@ -2,6 +2,7 @@ package com.example.guarden.viewmodel
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Bundle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.guarden.data.PlantDao
@@ -10,6 +11,7 @@ import com.example.guarden.data.WeatherApi
 import com.example.guarden.data.RatingManager
 import com.example.guarden.model.Plant
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,9 +30,10 @@ data class WeatherState(
 @HiltViewModel
 class PlantViewModel @Inject constructor(
     private val plantDao: PlantDao,
-    val userPreferencesRepository: UserPreferencesRepository, // גישה ציבורית ל-UI
+    val userPreferencesRepository: UserPreferencesRepository,
     private val weatherApi: WeatherApi,
-    val ratingManager: RatingManager, // גישה ציבורית ל-UI
+    val ratingManager: RatingManager,
+    private val firebaseAnalytics: FirebaseAnalytics
 ) : ViewModel() {
 
     val userPreferences = userPreferencesRepository.userData.stateIn(
@@ -113,8 +116,21 @@ class PlantViewModel @Inject constructor(
                 plantDao.insertPlant(
                     Plant(name = name, type = type, wateringFrequency = waterFreq, imageUri = imageUri)
                 )
+
+                // --- Analytics Tracking: Plant Added ---
+                val params = Bundle().apply {
+                    putString("plant_name", name)
+                    putString("plant_type", type)
+                    putInt("water_frequency", waterFreq)
+                }
+                firebaseAnalytics.logEvent("plant_added", params)
+                // ---------------------------------------
             }
         }
+    }
+
+    fun trackChatOpen() {
+        firebaseAnalytics.logEvent("chat_opened", null)
     }
 
     fun deletePlant(plant: Plant) {

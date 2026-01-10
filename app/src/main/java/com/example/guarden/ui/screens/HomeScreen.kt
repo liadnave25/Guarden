@@ -1,5 +1,4 @@
 package com.example.guarden.ui.screens
-
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -59,32 +58,28 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     navController: NavController,
     viewModel: PlantViewModel = hiltViewModel(),
-    adMobManager: com.example.guarden.ads.AdMobManager // הוספת מנהל המודעות
+    adMobManager: com.example.guarden.ads.AdMobManager
 ) {
     val plants by viewModel.plants.collectAsState()
     val showPaywall by viewModel.showPaywall.collectAsState()
     val weatherState by viewModel.weatherState.collectAsState()
     val isPremium by viewModel.isPremium.collectAsState()
-    val userPrefs by viewModel.userPreferences.collectAsState() // מעקב אחרי העדפות משתמש
+    val userPrefs by viewModel.userPreferences.collectAsState()
     var showVersionDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // סטייטים חדשים לדיאלוגים
     var showRatingDialog by remember { mutableStateOf(false) }
     var showShareDialog by remember { mutableStateOf(false) }
     var isChatOpen by remember { mutableStateOf(false) }
     var plantToDelete by remember { mutableStateOf<Plant?>(null) }
 
-    // --- לוגיקה להקפצת דיאלוגים (דירוג ושיתוף) ---
     LaunchedEffect(userPrefs) {
         val prefs = userPrefs ?: return@LaunchedEffect
 
-        // 1. בדיקת דירוג על פי ה-RatingManager
         if (viewModel.ratingManager.shouldShowRating()) {
             showRatingDialog = true
         }
-        // 2. אם לא דירוג, בדיקת שיתוף ללא-פרימיום (כל 3 ימים)
         else if (!prefs.isPremium) {
             val threeDays = 3 * 24 * 60 * 60 * 1000L
             if (System.currentTimeMillis() - prefs.lastSharePromptTime > threeDays) {
@@ -97,11 +92,8 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) {
-        // יקפיץ את הודעת העדכון מיד עם פתיחת האפליקציה
-        showVersionDialog = true
-    }
+        showVersionDialog = true   }
 
-    // פונקציית עזר לביצוע שיתוף
     fun executeShare() {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
@@ -111,7 +103,6 @@ fun HomeScreen(
         viewModel.updateSharePromptTime()
     }
 
-    // --- הצגת דיאלוגים (אם צריך) ---
     if (showRatingDialog) {
         ManualRatingDialog(
             onDismiss = { showRatingDialog = false; viewModel.updateLastRatingPromptTime() },
@@ -137,7 +128,6 @@ fun HomeScreen(
         )
     }
 
-    // --- שאר הדיאלוגים הקיימים (מחיקה ו-Paywall) ---
     if (plantToDelete != null) {
         AlertDialog(
             onDismissRequest = { plantToDelete = null },
@@ -227,23 +217,27 @@ fun HomeScreen(
                 }
             }
 
-            // כפתור AI Agent
             Box(
-                modifier = Modifier.align(Alignment.BottomStart).padding(start = 24.dp, bottom = 24.dp).size(64.dp).clip(CircleShape).background(if (isPremium) Brush.linearGradient(colors = listOf(Color(0xFF63D066), Color(0xFF30D7A7))) else SolidColor(Color(0xFF424242))).clickable { if (isPremium) isChatOpen = true else Toast.makeText(context, "Agent is locked!", Toast.LENGTH_SHORT).show() },
+                modifier = Modifier.align(Alignment.BottomStart).padding(start = 24.dp, bottom = 24.dp).size(64.dp).clip(CircleShape).background(if (isPremium) Brush.linearGradient(colors = listOf(Color(0xFF63D066), Color(0xFF30D7A7))) else SolidColor(Color(0xFF424242))).clickable {
+                    if (isPremium) {
+                        isChatOpen = true
+                        viewModel.trackChatOpen() // --- Analytics Tracking: Chat Opened ---
+                    } else {
+                        Toast.makeText(context, "Agent is locked!", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 contentAlignment = Alignment.Center
             ) {
                 if (isPremium) { Image(painter = painterResource(id = R.drawable.sparkles), contentDescription = "AI Agent", modifier = Modifier.size(32.dp)) }
                 else { Box(contentAlignment = Alignment.Center) { Image(painter = painterResource(id = R.drawable.sparkles), contentDescription = null, alpha = 0.3f, modifier = Modifier.size(32.dp)); Icon(imageVector = Icons.Default.Lock, contentDescription = "Locked", tint = Color.White, modifier = Modifier.size(20.dp).offset(x = 10.dp, y = 10.dp)) } }
             }
 
-            // כפתור הוספה (Lottie)
             Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp).size(80.dp).clip(CircleShape).clickable { navController.navigate(Screen.AddPlant.route) }, contentAlignment = Alignment.Center) {
                 val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.add_button))
                 val progress by animateLottieCompositionAsState(composition = composition, iterations = LottieConstants.IterateForever)
                 LottieAnimation(composition = composition, progress = { progress }, modifier = Modifier.fillMaxSize())
             }
 
-            // צ'אט Agent עם לוגיקת שיתוף לפרימיום בסגירה
             AnimatedVisibility(visible = isChatOpen, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut(), modifier = Modifier.fillMaxSize().zIndex(2f)) {
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { isChatOpen = false }, contentAlignment = Alignment.Center) {
                     Card(modifier = Modifier.fillMaxWidth(0.9f).fillMaxHeight(0.85f).clickable(enabled = false) {}, shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
@@ -252,7 +246,6 @@ fun HomeScreen(
                             IconButton(
                                 onClick = {
                                     isChatOpen = false
-                                    // לוגיקה לפרימיום: הצגת שיתוף בסגירת צ'אט
                                     if (isPremium) { scope.launch { delay(500); showShareDialog = true } }
                                 },
                                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.White.copy(alpha = 0.7f), CircleShape)
