@@ -25,6 +25,8 @@ private val LAST_RATING_PROMPT_TIME = longPreferencesKey("last_rating_prompt_tim
 private val USER_ALREADY_RATED = booleanPreferencesKey("user_already_rated")
 private val NEVER_ASK_RATING_AGAIN = booleanPreferencesKey("never_ask_rating_again")
 
+private val AD_FREE_REWARD_EXPIRY = longPreferencesKey("ad_free_reward_expiry")
+
 class UserPreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) {
@@ -42,16 +44,23 @@ class UserPreferencesRepository @Inject constructor(
                 lastLat = preferences[LAST_KNOWN_LAT] ?: 0.0,
                 lastLon = preferences[LAST_KNOWN_LON] ?: 0.0,
                 lastUpsellTime = preferences[LAST_UPSELL_TIME] ?: 0L,
-                // ערכי ברירת מחדל לדירוג
                 firstInstallTime = preferences[FIRST_INSTALL_TIME] ?: System.currentTimeMillis(),
                 lastRatingPromptTime = preferences[LAST_RATING_PROMPT_TIME] ?: 0L,
                 userAlreadyRated = preferences[USER_ALREADY_RATED] ?: false,
                 neverAskAgain = preferences[NEVER_ASK_RATING_AGAIN] ?: false,
-                lastSharePromptTime = preferences[LAST_SHARE_PROMPT_TIME] ?: 0L
+                lastSharePromptTime = preferences[LAST_SHARE_PROMPT_TIME] ?: 0L,
+                adFreeRewardExpiry = preferences[AD_FREE_REWARD_EXPIRY] ?: 0L
             )
         }
 
     val isPremium: Flow<Boolean> = userData.map { it.isPremium }
+    val isAdFree: Flow<Boolean> = userData.map { prefs ->
+        prefs.isPremium || prefs.adFreeRewardExpiry > System.currentTimeMillis()
+    }
+    suspend fun grantAdFreeReward(days: Int) = dataStore.edit { prefs ->
+        val expiryTime = System.currentTimeMillis() + (days * 24 * 60 * 60 * 1000L)
+        prefs[AD_FREE_REWARD_EXPIRY] = expiryTime
+    }
 
     suspend fun setPremium(isPremium: Boolean) = dataStore.edit { it[IS_PREMIUM] = isPremium }
     suspend fun setNotifications(isEnabled: Boolean) = dataStore.edit { it[NOTIFICATIONS_ENABLED] = isEnabled }
@@ -84,5 +93,6 @@ data class UserPreferences(
     val lastRatingPromptTime: Long,
     val userAlreadyRated: Boolean,
     val neverAskAgain: Boolean,
-    val lastSharePromptTime: Long
+    val lastSharePromptTime: Long,
+    val adFreeRewardExpiry: Long
 )

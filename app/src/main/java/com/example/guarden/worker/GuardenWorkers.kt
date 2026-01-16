@@ -33,12 +33,18 @@ class MorningWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val prefs = userPrefs.userData.first()
         if (!prefs.notificationsEnabled) return Result.success()
-
-        // 1. בדיקת אי-פעילות (הצמחים התגעגעו)
         val daysSinceOpen = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - prefs.lastAppOpen)
-        // אם עברו 2 ימים, או 4, או 6... (מספר זוגי של ימים)
-        if (daysSinceOpen > 0 && daysSinceOpen % 2 == 0L) {
-            sendNotification(applicationContext, "Plants Miss You!", "הצמחים התגעגעו, אל תשכח להגיד להם שלום 🌱", 101)
+        if (daysSinceOpen == 14L) {
+            // התראה מיוחדת ביום ה-14 - Reactivation Reward
+            sendNotification(
+                applicationContext,
+                "Special Gift Waiting! 🎁",
+                "Come back now and get one week of Guarden Premium ad-free as a gift!",
+                104
+            )
+        } else if (daysSinceOpen > 0 && daysSinceOpen % 2 == 0L) {
+            // התזכורת הרגילה שלך לימים זוגיים אחרים
+            sendNotification(applicationContext, "Plants Miss You!", "Your plants missed you! Don't forget to say hello 🌱", 101)
         }
 
         // 2. בדיקת מזג אוויר סוער
@@ -60,7 +66,6 @@ class MorningWorker @AssistedInject constructor(
                     sendNotification(applicationContext, "Weather Alert", "Attention! The weather is stormy today. $stormMsg", 102)
                 }
             } catch (e: Exception) {
-                // נכשל בהבאת מזג אוויר, לא נורא
             }
         }
 
@@ -69,7 +74,7 @@ class MorningWorker @AssistedInject constructor(
         if (plants.size >= prefs.plantLimit) {
             val daysSinceUpsell = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - prefs.lastUpsellTime)
             if (daysSinceUpsell >= 3) {
-                sendNotification(applicationContext, "Garden Full?", "הגינה שלך מלאה, אם תרצה להרחיב אותה תמורת 5$ בלבד, בוא לבקר 🏡", 103)
+                sendNotification(applicationContext, "Garden Full?", "Your garden is full! Visit us to expand your capacity for only $5 🏡", 103)
                 userPrefs.updateLastUpsellTime()
             }
         }
@@ -78,7 +83,6 @@ class MorningWorker @AssistedInject constructor(
     }
 }
 
-// --- עובד צהריים (בודק: השקיה) ---
 @HiltWorker
 class NoonWorker @AssistedInject constructor(
     @Assisted appContext: Context,
@@ -99,7 +103,7 @@ class NoonWorker @AssistedInject constructor(
         }
 
         if (neglectedPlants.isNotEmpty()) {
-            sendNotification(applicationContext, "Plants Need Water", "יש לך צמחים שמחכים להשקיה זמן רב, קפוץ לביקור בגינה שלך 💧", 201)
+            sendNotification(applicationContext, "Plants Need Water", "Some of your plants have been waiting for water for a long time. Come visit your garden 💧", 201)
         }
 
         return Result.success()

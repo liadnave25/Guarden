@@ -8,6 +8,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -16,8 +17,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.Grass
+import androidx.compose.material.icons.filled.KeyboardArrowRight // השתמשנו בזה במקום ChevronRight
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsOff
@@ -84,6 +87,11 @@ fun SettingsScreen(
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", context.packageName, null)
         }
+        context.startActivity(intent)
+    }
+
+    fun openUrl(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         context.startActivity(intent)
     }
 
@@ -269,6 +277,40 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 8.dp, start = 4.dp)
             )
 
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "LEGAL",
+                style = MaterialTheme.typography.labelLarge,
+                color = GreenPrimary,
+                modifier = Modifier.align(Alignment.Start).padding(bottom = 12.dp)
+            )
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    LegalRowItem(
+                        title = "Privacy Policy",
+                        icon = Icons.Default.Lock,
+                        onClick = { openUrl("https://sites.google.com/view/guarden-privacy-policy/%D7%91%D7%99%D7%AA") }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = Color.LightGray.copy(alpha = 0.4f)
+                    )
+                    LegalRowItem(
+                        title = "Terms & Conditions",
+                        icon = Icons.Default.Description,
+                        onClick = { openUrl("https://sites.google.com/view/guarden-termsconditions/%D7%91%D7%99%D7%AA") }
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(40.dp))
 
             Box(
@@ -296,6 +338,45 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
         }
+    }
+}
+
+@Composable
+fun LegalRowItem(
+    title: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = GreenPrimary,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                color = TextDark
+            )
+        }
+        Icon(
+            // --- שימוש ב-KeyboardArrowRight (יציב יותר) ---
+            imageVector = Icons.Default.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color.LightGray,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 

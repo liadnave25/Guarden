@@ -64,6 +64,10 @@ fun HomeScreen(
     val showPaywall by viewModel.showPaywall.collectAsState()
     val weatherState by viewModel.weatherState.collectAsState()
     val isPremium by viewModel.isPremium.collectAsState()
+
+    // --- עדכון: האזנה לסטטוס "ללא פרסומות" (כולל בונוס Reactivation) ---
+    val isAdFree by viewModel.isAdFree.collectAsState()
+
     val userPrefs by viewModel.userPreferences.collectAsState()
     var showVersionDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -87,12 +91,14 @@ fun HomeScreen(
             }
         }
     }
+
     if (showVersionDialog) {
         VersionUpdateDialog(onDismiss = { showVersionDialog = false })
     }
 
     LaunchedEffect(Unit) {
-        showVersionDialog = true   }
+        showVersionDialog = true
+    }
 
     fun executeShare() {
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -114,11 +120,17 @@ fun HomeScreen(
                     Toast.makeText(context, "Thanks for the rating, glad you're enjoying! 🌱", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(context, "Sorry for the experience, we'd love your feedback! 🌱", Toast.LENGTH_SHORT).show()
-                    (context as? Activity)?.let { adMobManager.showInterstitial(it) {} }
+
+                    // --- עדכון: הצגת פרסומת רק אם המשתמש לא בסטטוס AdFree ---
+                    if (!isAdFree) {
+                        (context as? Activity)?.let { adMobManager.showInterstitial(it) {} }
+                    }
                 }
             }
         )
     }
+
+    // ... (שאר הלוגיקה של ShareDialog, DeleteDialog ו-Location ללא שינוי) ...
 
     if (showShareDialog) {
         ShareAppDialog(
@@ -209,21 +221,35 @@ fun HomeScreen(
                 LazyColumn(contentPadding = PaddingValues(bottom = 120.dp), modifier = Modifier.fillMaxSize()) {
                     itemsIndexed(sortedPlants) { index, plant ->
                         Column {
-                            PlantItemCard(plant = plant, onDeleteClick = { plantToDelete = plant }, onWaterClick = { viewModel.waterPlant(plant); Toast.makeText(context, "Watered ${plant.name}! 🌱", Toast.LENGTH_SHORT).show() })
-                            if (!isPremium && (index + 1) % 3 == 0) { NativeAdComponent() }
+                            PlantItemCard(
+                                plant = plant,
+                                onDeleteClick = { plantToDelete = plant },
+                                onWaterClick = {
+                                    viewModel.waterPlant(plant);
+                                    Toast.makeText(context, "Watered ${plant.name}! 🌱", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                            // --- עדכון: הצגת Native Ad רק אם המשתמש לא בסטטוס AdFree ---
+                            if (!isAdFree && (index + 1) % 3 == 0) {
+                                NativeAdComponent()
+                            }
                         }
                     }
-                    if (!isPremium && sortedPlants.size < 3) { item { NativeAdComponent() } }
+                    // --- עדכון: הצגת Native Ad במקרה של מעט צמחים רק אם לא AdFree ---
+                    if (!isAdFree && sortedPlants.size < 3) {
+                        item { NativeAdComponent() }
+                    }
                 }
             }
 
+            // --- חשוב: כפתור ה-AI Agent נשאר תלוי ב-isPremium בלבד ---
             Box(
                 modifier = Modifier.align(Alignment.BottomStart).padding(start = 24.dp, bottom = 24.dp).size(64.dp).clip(CircleShape).background(if (isPremium) Brush.linearGradient(colors = listOf(Color(0xFF63D066), Color(0xFF30D7A7))) else SolidColor(Color(0xFF424242))).clickable {
                     if (isPremium) {
                         isChatOpen = true
-                        viewModel.trackChatOpen() // --- Analytics Tracking: Chat Opened ---
+                        viewModel.trackChatOpen()
                     } else {
-                        Toast.makeText(context, "Agent is locked!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "AI Agent is locked! Upgrade to Premium to unlock.", Toast.LENGTH_SHORT).show()
                     }
                 },
                 contentAlignment = Alignment.Center
@@ -232,6 +258,7 @@ fun HomeScreen(
                 else { Box(contentAlignment = Alignment.Center) { Image(painter = painterResource(id = R.drawable.sparkles), contentDescription = null, alpha = 0.3f, modifier = Modifier.size(32.dp)); Icon(imageVector = Icons.Default.Lock, contentDescription = "Locked", tint = Color.White, modifier = Modifier.size(20.dp).offset(x = 10.dp, y = 10.dp)) } }
             }
 
+            // ... (שאר הקוד של כפתור ההוספה והצ'אט ללא שינוי) ...
             Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp).size(80.dp).clip(CircleShape).clickable { navController.navigate(Screen.AddPlant.route) }, contentAlignment = Alignment.Center) {
                 val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.add_button))
                 val progress by animateLottieCompositionAsState(composition = composition, iterations = LottieConstants.IterateForever)

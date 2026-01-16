@@ -48,6 +48,8 @@ class PlantViewModel @Inject constructor(
     val isPremium: StateFlow<Boolean> = userPreferencesRepository.isPremium
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val isAdFree: StateFlow<Boolean> = userPreferencesRepository.isAdFree
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     private val _weatherState = MutableStateFlow(WeatherState())
     val weatherState: StateFlow<WeatherState> = _weatherState.asStateFlow()
 
