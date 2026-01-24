@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
@@ -18,9 +19,10 @@ import com.example.guarden.data.WeatherApi
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
-// --- עובד בוקר (בודק: אי-פעילות, מזג אוויר, חריגה במכסה) ---
+// --- עובד בוקר (09:00): בדיקת הפעלה מחדש, ימים זוגיים ומזג אוויר ---
 @HiltWorker
 class MorningWorker @AssistedInject constructor(
     @Assisted appContext: Context,
@@ -33,56 +35,55 @@ class MorningWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val prefs = userPrefs.userData.first()
         if (!prefs.notificationsEnabled) return Result.success()
-        val daysSinceOpen = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - prefs.lastAppOpen)
-        if (daysSinceOpen == 14L) {
-            // התראה מיוחדת ביום ה-14 - Reactivation Reward
+
+        val currentTime = System.currentTimeMillis()
+
+        // 1. תגמולי הפעלה מחדש (Reactivation Reward) - מעל 14 יום ללא פתיחה
+        val daysSinceOpen = TimeUnit.MILLISECONDS.toDays(currentTime - prefs.lastAppOpen)
+        if (daysSinceOpen >= 14) {
             sendNotification(
                 applicationContext,
                 "Special Gift Waiting! 🎁",
-                "Come back now and get one week of Guarden Premium ad-free as a gift!",
+                "We missed you! Come back now and get one week of Guarden Premium as a gift.",
                 104
             )
-        } else if (daysSinceOpen > 0 && daysSinceOpen % 2 == 0L) {
-            // התזכורת הרגילה שלך לימים זוגיים אחרים
-            sendNotification(applicationContext, "Plants Miss You!", "Your plants missed you! Don't forget to say hello 🌱", 101)
+            return Result.success() // אם שלחנו התראת חזרה, לא נציף באחרות
         }
 
-        // 2. בדיקת מזג אוויר סוער
+        // 2. לולאות הרגל (Habit Loops) - בימים זוגיים של החודש
+        val dayOfMonth = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+        if (dayOfMonth % 2 == 0) {
+            sendNotification(
+                applicationContext,
+                "Plants Miss You! 🌱",
+                "Your plants are waiting for a visit. Don't forget to say hello today!",
+                101
+            )
+        }
+
+        // 3. התראות מזג אוויר קיצוני (Weather-Aware Alerts)
         if (prefs.lastLat != 0.0) {
             try {
-                val apiKey = "" // שים כאן את המפתח האמיתי!
-                val weather = weatherApi.getCurrentWeather(prefs.lastLat, prefs.lastLon, apiKey = apiKey)
-
+                val weather = weatherApi.getCurrentWeather(prefs.lastLat, prefs.lastLon, apiKey = "Your_API_Key")
                 val temp = weather.main.temp
                 val condition = weather.weather.firstOrNull()?.main ?: ""
 
-                var stormMsg = ""
-                if (temp < 10) stormMsg = "It's very cold outside! Be careful of sensitive plants ❄️"
-                else if (temp > 35) stormMsg = "Extremely hot! Don't forget to water ☀️"
-                else if (condition.contains("Rain") || condition.contains("Storm")) stormMsg = "גשום וסוער היום! 🌧️"
-                else if (condition.contains("Snow")) stormMsg = "Snow outside! ☃️"
+                var alertMsg = ""
+                if (temp < 10) alertMsg = "It's very cold! Protect your sensitive plants. ❄️"
+                else if (temp > 35) alertMsg = "Extremely hot today! Ensure your plants have enough shade. ☀️"
+                else if (condition.contains("Storm") || condition.contains("Rain")) alertMsg = "Stormy weather ahead! 🌧️"
 
-                if (stormMsg.isNotEmpty()) {
-                    sendNotification(applicationContext, "Weather Alert", "Attention! The weather is stormy today. $stormMsg", 102)
+                if (alertMsg.isNotEmpty()) {
+                    sendNotification(applicationContext, "Weather Alert", alertMsg, 102)
                 }
-            } catch (e: Exception) {
-            }
-        }
-
-        // 3. הצעת הרחבה (Upsell) - כל 3 ימים אם הגינה מלאה
-        val plants = plantDao.getPlants().first()
-        if (plants.size >= prefs.plantLimit) {
-            val daysSinceUpsell = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - prefs.lastUpsellTime)
-            if (daysSinceUpsell >= 3) {
-                sendNotification(applicationContext, "Garden Full?", "Your garden is full! Visit us to expand your capacity for only $5 🏡", 103)
-                userPrefs.updateLastUpsellTime()
-            }
+            } catch (e: Exception) { /* שגיאת רשת - נתעלם בשקט */ }
         }
 
         return Result.success()
     }
 }
 
+// --- עובד צהריים (13:00): תזכורות השקיה לפי צורך ---
 @HiltWorker
 class NoonWorker @AssistedInject constructor(
     @Assisted appContext: Context,
@@ -95,40 +96,58 @@ class NoonWorker @AssistedInject constructor(
         val prefs = userPrefs.userData.first()
         if (!prefs.notificationsEnabled) return Result.success()
 
-        // בדיקת צמחים שלא הושקו 4 ימים
         val plants = plantDao.getPlants().first()
-        val neglectedPlants = plants.filter {
-            val diff = System.currentTimeMillis() - it.lastWateringDate
-            TimeUnit.MILLISECONDS.toDays(diff) > 4
+
+        // סינון צמחים שזקוקים להשקיה (לפי הלוגיקה שלך)
+        val plantsInNeed = plants.filter { plant ->
+            // אם עברו יותר מ-0 ימים מההשקיה האחרונה (כלומר לא הושקה היום)
+            TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - plant.lastWateringDate) >= 1
         }
 
-        if (neglectedPlants.isNotEmpty()) {
-            sendNotification(applicationContext, "Plants Need Water", "Some of your plants have been waiting for water for a long time. Come visit your garden 💧", 201)
+        if (plantsInNeed.isNotEmpty()) {
+            sendNotification(
+                applicationContext,
+                "Watering Reminder 💧",
+                "You have ${plantsInNeed.size} plants that need watering. Keep them hydrated!",
+                201
+            )
         }
 
         return Result.success()
     }
 }
 
-// פונקציית עזר לשליחת התראה
+// --- פונקציית עזר מאוחדת וסופית לשליחת התראות ---
 fun sendNotification(context: Context, title: String, message: String, id: Int) {
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     val channelId = "guarden_alerts"
 
-    // יצירת ערוץ (חובה באנדרואיד 8+)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(channelId, "Guarden Alerts", NotificationManager.IMPORTANCE_DEFAULT)
+        val channel = NotificationChannel(channelId, "Guarden Alerts", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "Garden Maintenance & Weather Alerts"
+            enableVibration(true)
+        }
         notificationManager.createNotificationChannel(channel)
     }
 
-    // לחיצה פותחת את האפליקציה
-    val intent = Intent(context, MainActivity::class.java)
-    val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+    val intent = Intent(context, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+
+    val pendingIntent = PendingIntent.getActivity(
+        context, id, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    )
+
+    // שימוש באייקון האפליקציה (ic_launcher)
+    val appIcon = BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
 
     val notification = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(R.drawable.ic_launcher_foreground) // וודא שיש לך אייקון, אחרת האפליקציה תקרוס!
+        .setSmallIcon(R.drawable.ic_launcher_foreground) // אייקון קטן לשורת הסטטוס
+        .setLargeIcon(appIcon) // אייקון גדול שמופיע בתוך ההתראה עצמה
         .setContentTitle(title)
         .setContentText(message)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setDefaults(NotificationCompat.DEFAULT_ALL)
         .setContentIntent(pendingIntent)
         .setAutoCancel(true)
         .build()

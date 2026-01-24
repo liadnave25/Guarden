@@ -10,7 +10,7 @@ import com.example.guarden.ads.AdMobManager
 import com.example.guarden.worker.MorningWorker
 import com.example.guarden.worker.NoonWorker
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.RequestConfiguration // הוספנו
+import com.google.android.gms.ads.RequestConfiguration
 import dagger.hilt.android.HiltAndroidApp
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -22,6 +22,7 @@ class GuardenApplication : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var adMobManager: AdMobManager
 
+    // חיבור WorkManager ל-Hilt לצורך הזרקת תלויות ל-Workers
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -30,38 +31,42 @@ class GuardenApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
 
-        // 1. אתחול Mobile Ads SDK
+        // אתחול מערך הפרסומות
         MobileAds.initialize(this) {}
 
-        // --- תיקון: הגדרת מכשיר הבדיקה (לפי ה-Logcat שלך) ---
+        // הגדרת מכשיר הבדיקה לצורך הצגת מודעות AdMob
         val testDeviceIds = listOf("FC94F3F9B60C8C10BC8A7D81190F1CF3")
         val configuration = RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build()
         MobileAds.setRequestConfiguration(configuration)
-        // -----------------------------------------------------
 
-        // 2. אתחול ה-Manager
         adMobManager.initialize(this)
-
-        // 3. טעינה ראשונית
         adMobManager.loadAppOpenAd(this)
         adMobManager.loadInterstitial(this)
 
+        // הפעלת מערך ההתראות המחזורי
         setupRecurringWork()
     }
 
+    /**
+     * מגדיר את העבודות המחזוריות של האפליקציה:
+     * 1. MorningWorker בשעה 09:00 (מזג אוויר, געגועים, פרס)
+     * 2. NoonWorker בשעה 13:00 (תזכורות השקיה)
+     */
     private fun setupRecurringWork() {
         val workManager = WorkManager.getInstance(this)
 
+        // תזמון עובד בוקר - 09:00
         val morningRequest = PeriodicWorkRequestBuilder<MorningWorker>(24, TimeUnit.HOURS)
             .setInitialDelay(calculateInitialDelay(9), TimeUnit.MILLISECONDS)
             .build()
 
         workManager.enqueueUniquePeriodicWork(
             "MorningCheck",
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.KEEP, // שומר על התזמון הקיים ולא מאתחל מחדש בכל פתיחה
             morningRequest
         )
 
+        // תזמון עובד צהריים - 13:00
         val noonRequest = PeriodicWorkRequestBuilder<NoonWorker>(24, TimeUnit.HOURS)
             .setInitialDelay(calculateInitialDelay(13), TimeUnit.MILLISECONDS)
             .build()
@@ -73,6 +78,9 @@ class GuardenApplication : Application(), Configuration.Provider {
         )
     }
 
+    /**
+     * מחשב את הזמן שנותר עד לשעה ספציפית ביום
+     */
     private fun calculateInitialDelay(targetHour: Int): Long {
         val currentDate = Calendar.getInstance()
         val dueDate = Calendar.getInstance()

@@ -52,6 +52,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.FileOutputStream
+import java.io.InputStream
+
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -113,19 +116,20 @@ fun AddPlantScreen(
 
     fun onSave() {
         if (isFormValid) {
+            val finalImagePath = selectedImageUri?.let { uri ->
+                saveImageToInternalStorage(context, uri)
+            }
+
             viewModel.addPlant(
                 name = name,
                 type = type,
                 waterFreq = waterFreqFloat.toInt(),
-                imageUri = selectedImageUri?.toString()
+                imageUri = finalImagePath // שומרים את הנתיב המקומי (String) ולא את ה-URI הזמני
             )
-            // שינוי קריטי: במקום לנווט מכאן, אנחנו קוראים ל-Callback
-            // ה-MainActivity יציג את הפרסומת ואז ינווט אחורה
             onSaveClick()
         }
     }
 
-    // --- UI של הבוטום שיט (בחירה בין מצלמה לגלריה) ---
     if (showImageSourceOption) {
         ModalBottomSheet(
             onDismissRequest = { showImageSourceOption = false },
@@ -390,4 +394,24 @@ fun Modifier.dashedBorder(width: Dp, color: Color, radius: Dp) = drawBehind {
         ),
         cornerRadius = CornerRadius(radius.toPx())
     )
+}
+
+fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
+    return try {
+        // יצירת שם ייחודי לקובץ
+        val fileName = "plant_${System.currentTimeMillis()}.jpg"
+        val file = File(context.filesDir, fileName)
+
+        // העתקת זרם הנתונים מה-URI לקובץ החדש
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            FileOutputStream(file).use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        // החזרת הנתיב המוחלט של הקובץ החדש
+        file.absolutePath
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }

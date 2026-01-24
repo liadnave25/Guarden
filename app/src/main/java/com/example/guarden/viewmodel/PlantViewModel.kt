@@ -81,7 +81,7 @@ class PlantViewModel @Inject constructor(
                 viewModelScope.launch {
                     userPreferencesRepository.updateLocation(location.latitude, location.longitude)
                     try {
-                        val apiKey = "YOUR_API_KEY"
+                        val apiKey = "Your_API_Key"
                         val response = weatherApi.getCurrentWeather(location.latitude, location.longitude, apiKey = apiKey)
                         _weatherState.value = WeatherState(
                             temp = "${response.main.temp.toInt()}°C",

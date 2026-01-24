@@ -20,7 +20,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.Grass
-import androidx.compose.material.icons.filled.KeyboardArrowRight // השתמשנו בזה במקום ChevronRight
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsOff
@@ -61,26 +61,34 @@ fun SettingsScreen(
     var showBuyPremiumDialog by remember { mutableStateOf(false) }
     var showCancelPremiumDialog by remember { mutableStateOf(false) }
 
-    var isNotificationPermissionGranted by remember { mutableStateOf(false) }
+    // אתחול אקטיבי למניעת "מצמוץ" בסטטוס ההתראות
+    var isNotificationPermissionGranted by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else true
+        )
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    isNotificationPermissionGranted = ContextCompat.checkSelfPermission(
+                val currentStatus = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    ContextCompat.checkSelfPermission(
                         context,
                         Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED
-                } else {
-                    isNotificationPermissionGranted = true
-                }
-                viewModel.toggleNotifications(isNotificationPermissionGranted)
+                } else true
+
+                isNotificationPermissionGranted = currentStatus
+                viewModel.toggleNotifications(currentStatus)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     fun openAppSettings() {
@@ -95,6 +103,7 @@ fun SettingsScreen(
         context.startActivity(intent)
     }
 
+    // --- Dialogs ---
     if (showBuyPlantsDialog) {
         AlertDialog(
             onDismissRequest = { showBuyPlantsDialog = false },
@@ -107,9 +116,7 @@ fun SettingsScreen(
                     showBuyPlantsDialog = false
                 }, colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)) { Text("Buy Now") }
             },
-            dismissButton = {
-                TextButton(onClick = { showBuyPlantsDialog = false }) { Text("Cancel") }
-            }
+            dismissButton = { TextButton(onClick = { showBuyPlantsDialog = false }) { Text("Cancel") } }
         )
     }
 
@@ -125,9 +132,7 @@ fun SettingsScreen(
                     showBuyPremiumDialog = false
                 }, colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)) { Text("Subscribe") }
             },
-            dismissButton = {
-                TextButton(onClick = { showBuyPremiumDialog = false }) { Text("Maybe Later") }
-            }
+            dismissButton = { TextButton(onClick = { showBuyPremiumDialog = false }) { Text("Maybe Later") } }
         )
     }
 
@@ -142,9 +147,7 @@ fun SettingsScreen(
                     showCancelPremiumDialog = false
                 }, colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)) { Text("Confirm Cancel") }
             },
-            dismissButton = {
-                TextButton(onClick = { showCancelPremiumDialog = false }) { Text("Keep It") }
-            }
+            dismissButton = { TextButton(onClick = { showCancelPremiumDialog = false }) { Text("Keep It") } }
         )
     }
 
@@ -162,7 +165,6 @@ fun SettingsScreen(
             )
         },
     ) { paddingValues ->
-
         if (prefs == null) return@Scaffold
 
         Column(
@@ -173,7 +175,6 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
@@ -188,9 +189,7 @@ fun SettingsScreen(
                 subtitle = "Limit: 7 Plants",
                 isActive = !prefs!!.isPremium,
                 icon = Icons.Default.Spa,
-                onClick = {
-                    if (prefs!!.isPremium) showCancelPremiumDialog = true
-                }
+                onClick = { if (prefs!!.isPremium) showCancelPremiumDialog = true }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -212,9 +211,7 @@ fun SettingsScreen(
                 isActive = prefs!!.isPremium,
                 icon = Icons.Default.Diamond,
                 isPremiumStyle = true,
-                onClick = {
-                    if (!prefs!!.isPremium) showBuyPremiumDialog = true
-                }
+                onClick = { if (!prefs!!.isPremium) showBuyPremiumDialog = true }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -233,9 +230,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -249,7 +244,7 @@ fun SettingsScreen(
                         ) {
                             Icon(
                                 imageVector = if (isNotificationPermissionGranted) Icons.Default.Notifications else Icons.Default.NotificationsOff,
-                                null,
+                                contentDescription = null,
                                 tint = if (isNotificationPermissionGranted) GreenDark else Color.Gray
                             )
                         }
@@ -263,19 +258,11 @@ fun SettingsScreen(
                             )
                         }
                     }
-
                     TextButton(onClick = { openAppSettings() }) {
                         Text("Manage", fontWeight = FontWeight.Bold, color = GreenPrimary)
                     }
                 }
             }
-
-            Text(
-                text = "To change notification settings, please manage them in your device settings.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 8.dp, start = 4.dp)
-            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -296,7 +283,7 @@ fun SettingsScreen(
                     LegalRowItem(
                         title = "Privacy Policy",
                         icon = Icons.Default.Lock,
-                        onClick = { openUrl("https://sites.google.com/view/guarden-privacy-policy/%D7%91%D7%99%D7%AA") }
+                        onClick = { openUrl("https://sites.google.com/view/guarden-privacy-policy") }
                     )
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -306,77 +293,39 @@ fun SettingsScreen(
                     LegalRowItem(
                         title = "Terms & Conditions",
                         icon = Icons.Default.Description,
-                        onClick = { openUrl("https://sites.google.com/view/guarden-termsconditions/%D7%91%D7%99%D7%AA") }
+                        onClick = { openUrl("https://sites.google.com/view/guarden-termsconditions") }
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            Box(
-                modifier = Modifier.size(160.dp),
-                contentAlignment = Alignment.Center
-            ) {
+            // Animation
+            Box(modifier = Modifier.size(160.dp), contentAlignment = Alignment.Center) {
                 val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.walking_petos))
-                val progress by animateLottieCompositionAsState(
-                    composition = composition,
-                    iterations = LottieConstants.IterateForever
-                )
-
-                LottieAnimation(
-                    composition = composition,
-                    progress = { progress },
-                    modifier = Modifier.fillMaxSize()
-                )
+                val progress by animateLottieCompositionAsState(composition = composition, iterations = LottieConstants.IterateForever)
+                LottieAnimation(composition = composition, progress = { progress }, modifier = Modifier.fillMaxSize())
             }
 
-            Text(
-                text = "Version 1.0.0",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray.copy(alpha = 0.5f)
-            )
-
+            Text(text = "Version 1.0.0", style = MaterialTheme.typography.labelSmall, color = Color.Gray.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
 @Composable
-fun LegalRowItem(
-    title: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
+fun LegalRowItem(title: String, icon: ImageVector, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = GreenPrimary,
-                modifier = Modifier.size(22.dp)
-            )
+            Icon(imageVector = icon, contentDescription = null, tint = GreenPrimary, modifier = Modifier.size(22.dp))
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = TextDark
-            )
+            Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = TextDark)
         }
-        Icon(
-            // --- שימוש ב-KeyboardArrowRight (יציב יותר) ---
-            imageVector = Icons.Default.KeyboardArrowRight,
-            contentDescription = null,
-            tint = Color.LightGray,
-            modifier = Modifier.size(20.dp)
-        )
+        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -402,10 +351,7 @@ fun PlanCardModern(
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         border = if (isActive) BorderStroke(2.dp, borderColor) else null
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -413,49 +359,28 @@ fun PlanCardModern(
                     .background(if (isActive || isPremiumStyle) GreenPrimary else Color(0xFFF0F0F0)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (isActive || isPremiumStyle) Color.White else Color.Gray,
-                    modifier = Modifier.size(24.dp)
-                )
+                Icon(imageVector = icon, contentDescription = null, tint = if (isActive || isPremiumStyle) Color.White else Color.Gray, modifier = Modifier.size(24.dp))
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = if (isActive) GreenDark else TextDark
-                    )
+                    Text(text = title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = if (isActive) GreenDark else TextDark)
                     if (isActive) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(Icons.Default.Check, null, tint = GreenPrimary, modifier = Modifier.size(18.dp))
                     }
                 }
-
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = TextGray)
-
                 if (badge != null) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        color = GreenSoft.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = badge,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = GreenDark
-                        )
+                    Surface(color = GreenSoft.copy(alpha = 0.3f), shape = RoundedCornerShape(4.dp)) {
+                        Text(text = badge, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = GreenDark)
                     }
                 }
             }
-
             if (isPremiumStyle && !isActive) {
                 Icon(Icons.Default.Lock, null, tint = Color.Gray.copy(alpha = 0.4f))
             }

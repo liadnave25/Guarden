@@ -29,7 +29,7 @@ class ChatViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    private val apiKey = ""
+    private val apiKey = "Your_API_Key"
 
     private val generativeModel = GenerativeModel(
         modelName = "gemini-flash-latest",

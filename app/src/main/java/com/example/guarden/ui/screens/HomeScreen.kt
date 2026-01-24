@@ -130,7 +130,6 @@ fun HomeScreen(
         )
     }
 
-    // ... (שאר הלוגיקה של ShareDialog, DeleteDialog ו-Location ללא שינוי) ...
 
     if (showShareDialog) {
         ShareAppDialog(

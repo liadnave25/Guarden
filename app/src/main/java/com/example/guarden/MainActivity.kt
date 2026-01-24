@@ -1,6 +1,10 @@
 package com.example.guarden
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -33,36 +37,34 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var adMobManager: AdMobManager
-    // הזרקת ה-Repository לניהול הפרס
     @Inject lateinit var userPrefs: UserPreferencesRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // יצירת ערוץ התראות בדרגת חשיבות גבוהה כדי לאפשר באנרים קופצים
+        createNotificationChannel()
+
+        // הגדרת שפת האפליקציה לאנגלית
         val locale = Locale("en")
         Locale.setDefault(locale)
         val config = resources.configuration
         config.setLocale(locale)
         createConfigurationContext(config)
 
-        // משתנה State לניהול הצגת הדיאלוג
         val showReactivationDialog = mutableStateOf(false)
 
-        // בדיקת זכאות לפרס ועדכון זמן פתיחה
+        // בדיקת זכאות לפרס "חזרה לאפליקציה" (14 יום ללא פעילות)
         lifecycleScope.launch {
             val prefs = userPrefs.userData.first()
             val currentTime = System.currentTimeMillis()
-
-            // חישוב ההפרש בימים:
-            // $days = \lfloor \frac{currentTime - lastAppOpen}{1000 \cdot 60 \cdot 60 \cdot 24} \rfloor$
             val daysSinceLastOpen = TimeUnit.MILLISECONDS.toDays(currentTime - prefs.lastAppOpen)
 
             if (daysSinceLastOpen >= 14) {
                 userPrefs.grantAdFreeReward(7) // הענקת שבוע ללא פרסומות
-                showReactivationDialog.value = true // הצגת הודעה למשתמש
+                showReactivationDialog.value = true
             }
 
-            // עדכון זמן הפתיחה האחרון לזמן הנוכחי
             userPrefs.updateLastAppOpen()
         }
 
@@ -79,6 +81,28 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    /**
+     * יצירת ערוץ התראות (חובה עבור אנדרואיד 8.0 ומעלה).
+     * מוגדר כ-IMPORTANCE_HIGH כדי לתמוך בהתראות קופצות (Heads-up).
+     */
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "guarden_alerts"
+            val name = "Guarden Alerts"
+            val descriptionText = "Reminders for plant care and extreme weather alerts"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+
+            val channel = NotificationChannel(channelId, name, importance).apply {
+                description = descriptionText
+                enableVibration(true)
+            }
+
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
 }
 
 @Composable
@@ -89,12 +113,12 @@ fun GuardenApp(
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    // תצוגת הדיאלוג במידה והמשתמש זכאי לפרס
+    // דיאלוג קבלת פרס Reactivation
     if (showReactivationDialog.value) {
         AlertDialog(
             onDismissRequest = { showReactivationDialog.value = false },
             title = { Text(text = "Welcome Back! 🎁") },
-            text = { Text(text = "We missed you! As a special gift, you have received 7 days of Premium ad-free experience. Enjoy your garden!") },
+            text = { Text(text = "As a special gift for your return, you've received 7 days of Premium ad-free experience. Enjoy!") },
             confirmButton = {
                 Button(onClick = { showReactivationDialog.value = false }) {
                     Text("Awesome!")
@@ -107,7 +131,9 @@ fun GuardenApp(
         composable(Screen.Home.route) {
             HomeScreen(navController = navController, adMobManager = adMobManager)
         }
-        composable(Screen.Settings.route) { SettingsScreen(navController = navController) }
+        composable(Screen.Settings.route) {
+            SettingsScreen(navController = navController)
+        }
         composable(Screen.AddPlant.route) {
             AddPlantScreen(
                 navController = navController,
