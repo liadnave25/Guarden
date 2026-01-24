@@ -61,7 +61,7 @@ import java.io.InputStream
 fun AddPlantScreen(
     navController: NavController,
     viewModel: PlantViewModel = hiltViewModel(),
-    onSaveClick: () -> Unit // פרמטר חדש לטיפול בפרסומת המעבר
+    onSaveClick: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -71,14 +71,11 @@ fun AddPlantScreen(
     var waterFreqFloat by remember { mutableFloatStateOf(7f) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // משתנה להצגת הבוטום שיט לבחירת מקור תמונה
     var showImageSourceOption by remember { mutableStateOf(false) }
-    // משתנה זמני לשמירת ה-URI של המצלמה לפני הצילום
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
     val commonPlaces = listOf("Living Room", "Balcony", "Kitchen", "Bedroom", "Office", "Garden")
 
-    // --- 1. גלריה: משגר בחירת תמונה ---
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
@@ -87,7 +84,6 @@ fun AddPlantScreen(
         }
     )
 
-    // --- 2. מצלמה: משגר צילום תמונה ---
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
         onResult = { success ->
@@ -98,12 +94,10 @@ fun AddPlantScreen(
         }
     )
 
-    // --- 3. הרשאות: משגר בקשת הרשאה למצלמה ---
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // אם אושר -> צור קובץ ופתח מצלמה
             val uri = context.createImageFile()
             tempCameraUri = uri
             cameraLauncher.launch(uri)
@@ -124,7 +118,7 @@ fun AddPlantScreen(
                 name = name,
                 type = type,
                 waterFreq = waterFreqFloat.toInt(),
-                imageUri = finalImagePath // שומרים את הנתיב המקומי (String) ולא את ה-URI הזמני
+                imageUri = finalImagePath
             )
             onSaveClick()
         }
@@ -143,12 +137,10 @@ fun AddPlantScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // אפשרות 1: צילום תמונה
                 ListItem(
                     headlineContent = { Text("Take Photo") },
                     leadingContent = { Icon(Icons.Default.CameraAlt, null, tint = GreenPrimary) },
                     modifier = Modifier.clickable {
-                        // בדיקת הרשאה לפני פתיחת מצלמה
                         val permissionCheckResult = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
                         if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
                             val uri = context.createImageFile()
@@ -160,7 +152,6 @@ fun AddPlantScreen(
                     }
                 )
 
-                // אפשרות 2: בחירה מהגלריה
                 ListItem(
                     headlineContent = { Text("Choose from Gallery") },
                     leadingContent = { Icon(Icons.Default.Image, null, tint = GreenPrimary) },
@@ -187,7 +178,6 @@ fun AddPlantScreen(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = GreenBackground)
             )
         },
-        // מחקנו את ה-AdBanner מכאן
         bottomBar = { }
     ) { paddingValues ->
         Column(
@@ -199,7 +189,6 @@ fun AddPlantScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // כפתור התמונה פותח עכשיו את ה-BottomSheet
             Box(
                 modifier = Modifier
                     .size(140.dp)
@@ -234,7 +223,6 @@ fun AddPlantScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 2. שם הצמח
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
@@ -256,7 +244,6 @@ fun AddPlantScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 3. מיקום + Chips
             OutlinedTextField(
                 value = type,
                 onValueChange = { type = it },
@@ -300,7 +287,6 @@ fun AddPlantScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 4. סליידר תדירות השקיה
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(16.dp),
@@ -343,7 +329,6 @@ fun AddPlantScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // 5. כפתור שמירה
             Button(
                 onClick = { onSave() },
                 enabled = isFormValid,
@@ -368,7 +353,6 @@ fun AddPlantScreen(
     }
 }
 
-// פונקציית העזר ליצירת URI זמני למצלמה
 fun Context.createImageFile(): Uri {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val imageFileName = "JPEG_" + timeStamp + "_"
@@ -398,17 +382,14 @@ fun Modifier.dashedBorder(width: Dp, color: Color, radius: Dp) = drawBehind {
 
 fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
     return try {
-        // יצירת שם ייחודי לקובץ
         val fileName = "plant_${System.currentTimeMillis()}.jpg"
         val file = File(context.filesDir, fileName)
 
-        // העתקת זרם הנתונים מה-URI לקובץ החדש
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
             FileOutputStream(file).use { outputStream ->
                 inputStream.copyTo(outputStream)
             }
         }
-        // החזרת הנתיב המוחלט של הקובץ החדש
         file.absolutePath
     } catch (e: Exception) {
         e.printStackTrace()

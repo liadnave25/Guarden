@@ -27,22 +27,19 @@ import com.example.guarden.viewmodel.ChatViewModel
 
 @Composable
 fun ChatScreen(
-    // מחקנו את ה-navController כי בתוך הבועה אין צורך לנווט אחורה
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     var inputText by remember { mutableStateOf("") }
 
-    // שימוש ב-Column ראשי במקום Scaffold
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White) // רקע לבן לבועה
-            .padding(top = 16.dp) // קצת מרווח מלמעלה (כדי לא להיצמד ל-X)
+            .background(Color.White)
+            .padding(top = 16.dp)
     ) {
 
-        // --- כותרת (במקום TopBar) ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -59,23 +56,21 @@ fun ChatScreen(
 
         HorizontalDivider(color = GreenSoft.copy(alpha = 0.3f))
 
-        // --- איזור ההודעות (תופס את רוב המקום) ---
         Box(
             modifier = Modifier
-                .weight(1f) // זה גורם לתיבה הזו לתפוס את כל המקום הפנוי
+                .weight(1f)
                 .fillMaxWidth()
         ) {
-            // שכבה 1: אייקון רקע (Watermark) - נשמר מהקוד שלך
+
             Icon(
                 imageVector = Icons.Default.LocalFlorist,
                 contentDescription = null,
-                tint = GreenPrimary.copy(alpha = 0.05f), // החלשתי טיפה את השקיפות כדי שיהיה נעים בעין על לבן
+                tint = GreenPrimary.copy(alpha = 0.05f),
                 modifier = Modifier
                     .size(180.dp)
                     .align(Alignment.Center)
             )
 
-            // שכבה 2: רשימת ההודעות
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -89,9 +84,8 @@ fun ChatScreen(
             }
         }
 
-        // --- איזור ההקלדה (נשמר מהקוד שלך, רק ממוקם בתוך ה-Column) ---
         Column(
-            modifier = Modifier.background(Color(0xFFF8F8F8)) // רקע אפרפר עדין לאזור המקלדת
+            modifier = Modifier.background(Color(0xFFF8F8F8))
         ) {
             if (isLoading) {
                 LinearProgressIndicator(
@@ -151,11 +145,9 @@ fun ChatScreen(
     }
 }
 
-// --- ה-ChatBubble שלך (ללא שינוי, רק העתקתי כדי שיהיה שלם) ---
 @Composable
 fun ChatBubble(message: ChatMessage) {
-    // צבעים מותאמים לרקע הלבן של הבועה
-    val bubbleColor = if (message.isFromUser) GreenPrimary else Color(0xFFE8F5E9) // ירוק בהיר מאוד להודעות הבוט
+    val bubbleColor = if (message.isFromUser) GreenPrimary else Color(0xFFE8F5E9)
     val textColor = if (message.isFromUser) Color.White else Color.Black
     val alignment = if (message.isFromUser) Alignment.End else Alignment.Start
 

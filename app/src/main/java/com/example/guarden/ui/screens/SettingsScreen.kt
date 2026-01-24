@@ -61,7 +61,6 @@ fun SettingsScreen(
     var showBuyPremiumDialog by remember { mutableStateOf(false) }
     var showCancelPremiumDialog by remember { mutableStateOf(false) }
 
-    // אתחול אקטיבי למניעת "מצמוץ" בסטטוס ההתראות
     var isNotificationPermissionGranted by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

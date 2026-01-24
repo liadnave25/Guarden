@@ -17,9 +17,7 @@ private val LAST_APP_OPEN = longPreferencesKey("last_app_open")
 private val LAST_KNOWN_LAT = doublePreferencesKey("last_lat")
 private val LAST_KNOWN_LON = doublePreferencesKey("last_lon")
 private val LAST_UPSELL_TIME = longPreferencesKey("last_upsell_time")
-// בתוך הקובץ UserPreferencesRepository.kt
 private val LAST_SHARE_PROMPT_TIME = longPreferencesKey("last_share_prompt_time")
-// מפתחות חדשים לדירוג
 private val FIRST_INSTALL_TIME = longPreferencesKey("first_install_time")
 private val LAST_RATING_PROMPT_TIME = longPreferencesKey("last_rating_prompt_time")
 private val USER_ALREADY_RATED = booleanPreferencesKey("user_already_rated")

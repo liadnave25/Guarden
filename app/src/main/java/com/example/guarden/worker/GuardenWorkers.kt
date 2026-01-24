@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.first
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
-// --- עובד בוקר (09:00): בדיקת הפעלה מחדש, ימים זוגיים ומזג אוויר ---
 @HiltWorker
 class MorningWorker @AssistedInject constructor(
     @Assisted appContext: Context,
@@ -38,7 +37,6 @@ class MorningWorker @AssistedInject constructor(
 
         val currentTime = System.currentTimeMillis()
 
-        // 1. תגמולי הפעלה מחדש (Reactivation Reward) - מעל 14 יום ללא פתיחה
         val daysSinceOpen = TimeUnit.MILLISECONDS.toDays(currentTime - prefs.lastAppOpen)
         if (daysSinceOpen >= 14) {
             sendNotification(
@@ -47,10 +45,9 @@ class MorningWorker @AssistedInject constructor(
                 "We missed you! Come back now and get one week of Guarden Premium as a gift.",
                 104
             )
-            return Result.success() // אם שלחנו התראת חזרה, לא נציף באחרות
+            return Result.success()
         }
 
-        // 2. לולאות הרגל (Habit Loops) - בימים זוגיים של החודש
         val dayOfMonth = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
         if (dayOfMonth % 2 == 0) {
             sendNotification(
@@ -61,7 +58,6 @@ class MorningWorker @AssistedInject constructor(
             )
         }
 
-        // 3. התראות מזג אוויר קיצוני (Weather-Aware Alerts)
         if (prefs.lastLat != 0.0) {
             try {
                 val weather = weatherApi.getCurrentWeather(prefs.lastLat, prefs.lastLon, apiKey = "Your_API_Key")
@@ -76,14 +72,13 @@ class MorningWorker @AssistedInject constructor(
                 if (alertMsg.isNotEmpty()) {
                     sendNotification(applicationContext, "Weather Alert", alertMsg, 102)
                 }
-            } catch (e: Exception) { /* שגיאת רשת - נתעלם בשקט */ }
+            } catch (e: Exception) { }
         }
 
         return Result.success()
     }
 }
 
-// --- עובד צהריים (13:00): תזכורות השקיה לפי צורך ---
 @HiltWorker
 class NoonWorker @AssistedInject constructor(
     @Assisted appContext: Context,
@@ -98,9 +93,7 @@ class NoonWorker @AssistedInject constructor(
 
         val plants = plantDao.getPlants().first()
 
-        // סינון צמחים שזקוקים להשקיה (לפי הלוגיקה שלך)
         val plantsInNeed = plants.filter { plant ->
-            // אם עברו יותר מ-0 ימים מההשקיה האחרונה (כלומר לא הושקה היום)
             TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - plant.lastWateringDate) >= 1
         }
 
@@ -117,7 +110,6 @@ class NoonWorker @AssistedInject constructor(
     }
 }
 
-// --- פונקציית עזר מאוחדת וסופית לשליחת התראות ---
 fun sendNotification(context: Context, title: String, message: String, id: Int) {
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     val channelId = "guarden_alerts"
@@ -138,12 +130,11 @@ fun sendNotification(context: Context, title: String, message: String, id: Int) 
         context, id, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
 
-    // שימוש באייקון האפליקציה (ic_launcher)
     val appIcon = BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
 
     val notification = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(R.drawable.ic_launcher_foreground) // אייקון קטן לשורת הסטטוס
-        .setLargeIcon(appIcon) // אייקון גדול שמופיע בתוך ההתראה עצמה
+        .setSmallIcon(R.drawable.ic_launcher_foreground)
+        .setLargeIcon(appIcon)
         .setContentTitle(title)
         .setContentText(message)
         .setPriority(NotificationCompat.PRIORITY_HIGH)

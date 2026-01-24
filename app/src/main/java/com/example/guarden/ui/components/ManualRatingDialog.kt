@@ -1,4 +1,4 @@
-package com.example.guarden.ui.components // וודא שהנתיב תואם לתיקייה שלך
+package com.example.guarden.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape

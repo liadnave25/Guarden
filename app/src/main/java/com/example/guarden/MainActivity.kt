@@ -42,10 +42,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // יצירת ערוץ התראות בדרגת חשיבות גבוהה כדי לאפשר באנרים קופצים
+
         createNotificationChannel()
 
-        // הגדרת שפת האפליקציה לאנגלית
         val locale = Locale("en")
         Locale.setDefault(locale)
         val config = resources.configuration
@@ -54,14 +53,14 @@ class MainActivity : ComponentActivity() {
 
         val showReactivationDialog = mutableStateOf(false)
 
-        // בדיקת זכאות לפרס "חזרה לאפליקציה" (14 יום ללא פעילות)
+
         lifecycleScope.launch {
             val prefs = userPrefs.userData.first()
             val currentTime = System.currentTimeMillis()
             val daysSinceLastOpen = TimeUnit.MILLISECONDS.toDays(currentTime - prefs.lastAppOpen)
 
             if (daysSinceLastOpen >= 14) {
-                userPrefs.grantAdFreeReward(7) // הענקת שבוע ללא פרסומות
+                userPrefs.grantAdFreeReward(7)
                 showReactivationDialog.value = true
             }
 
@@ -82,10 +81,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * יצירת ערוץ התראות (חובה עבור אנדרואיד 8.0 ומעלה).
-     * מוגדר כ-IMPORTANCE_HIGH כדי לתמוך בהתראות קופצות (Heads-up).
-     */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelId = "guarden_alerts"
@@ -113,7 +108,6 @@ fun GuardenApp(
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    // דיאלוג קבלת פרס Reactivation
     if (showReactivationDialog.value) {
         AlertDialog(
             onDismissRequest = { showReactivationDialog.value = false },

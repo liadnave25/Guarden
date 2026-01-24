@@ -20,7 +20,7 @@ fun GuardenFab(onClick: () -> Unit) {
         containerColor = GreenPrimary,
         contentColor = Color.White,
         shape = CircleShape,
-        modifier = Modifier.size(64.dp) // כפתור גדול כמו ב-Wireframe
+        modifier = Modifier.size(64.dp)
     ) {
         Icon(
             imageVector = Icons.Default.Add,

@@ -36,7 +36,6 @@ fun ShareAppDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // כותרת
                 Text(
                     text = "Do you like our app?",
                     style = MaterialTheme.typography.headlineSmall,
@@ -47,7 +46,6 @@ fun ShareAppDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // תת-כותרת
                 Text(
                     text = "Share Guarden with your friends and community! 🌱",
                     style = MaterialTheme.typography.bodyMedium,
@@ -57,7 +55,6 @@ fun ShareAppDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // אנימציית Lottie
                 val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(lottieResId))
                 val progress by animateLottieCompositionAsState(
                     composition = composition,
@@ -66,18 +63,16 @@ fun ShareAppDialog(
                 LottieAnimation(
                     composition = composition,
                     progress = { progress },
-                    modifier = Modifier.size(150.dp) // גודל האנימציה
+                    modifier = Modifier.size(150.dp)
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // שורת הכפתורים בתחתית
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // כפתור ביטול (אפור)
                     TextButton(onClick = onDismiss) {
                         Text(
                             text = "No, Thanks",
@@ -86,7 +81,6 @@ fun ShareAppDialog(
                         )
                     }
 
-                    // כפתור אישור (ירוק ובולט)
                     Button(
                         onClick = onShareClicked,
                         colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),

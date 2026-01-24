@@ -100,7 +100,7 @@ class AdMobManager @Inject constructor(
         return dateDifference < (3600000 * numHours)
     }
 
-    // --- Interstitial Ad Logic (במקום Rewarded) ---
+    // --- Interstitial Ad Logic ---
 
     fun loadInterstitial(context: Context) {
         CoroutineScope(Dispatchers.Main).launch {

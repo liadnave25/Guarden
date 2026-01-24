@@ -7,7 +7,7 @@ import retrofit2.http.Query
 data class WeatherResponse(
     val main: MainStats,
     val weather: List<WeatherDescription>,
-    val name: String // שם העיר
+    val name: String
 )
 
 data class MainStats(
